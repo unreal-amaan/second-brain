@@ -1,11 +1,14 @@
 import express from "express"
 import mongoose from "mongoose"
 import dotenv from "dotenv"
-
-
+import UserRoutes from "./src/routes/user.routes"
 
 const app = express();
 dotenv.config();
+
+app.use(express.json());
+app.use("/user" , UserRoutes);
+
 
 async function main() {
     try {
