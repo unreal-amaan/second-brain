@@ -4,11 +4,19 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import validator from "validator";
-import { UserModel } from "../schema/schema";
+import { UserModel , ContentModel , TagModel , LinkModel } from "../schema/schema";
+import userauth from "../middlewares/user.auth";
+
 
 const UserRoutes = express.Router();
 dotenv.config();
 const JWT_SECRET = process.env.JWT_SECRET as string;
+
+interface user_credentials {
+    username: string;
+    password: string;
+}
+
 
 UserRoutes.post(
     "/signup",
@@ -67,10 +75,6 @@ UserRoutes.post(
 UserRoutes.post(
     "/signin",
     async (req: Request, res: Response): Promise<void> => {
-        interface user_credentials {
-            username: string;
-            password: string;
-        }
 
         const UserCredentials: user_credentials = req.body;
 
@@ -83,11 +87,10 @@ UserRoutes.post(
             });
             return;
         }
-        console.log(user.password);
-        console.log(UserCredentials.password);
+        console.log(user)
         const valid_password = await bcrypt.compare(
             UserCredentials.password,
-            user.password,
+            user.password
         );
 
         if (!valid_password) {
@@ -98,10 +101,10 @@ UserRoutes.post(
         }
         const token = jwt.sign(
             {
-                username: user.username,
+                id: user._id.toString(),
             },
             JWT_SECRET,
-            {expiresIn : '1h'}
+            { expiresIn: "1h" }
         );
 
         res.status(200).json({
@@ -110,5 +113,39 @@ UserRoutes.post(
         });
     }
 );
+
+UserRoutes.use(userauth)
+
+interface CustomRequest extends Request{
+    userId?: string
+}
+
+UserRoutes.get("/my-content" , async (req:CustomRequest , res:Response) => {
+    const userId = req.userId
+    try {
+        const find_content = await ContentModel.find({
+            userId: userId
+        })
+        if(find_content.length == 0) {
+            res.status(404).json({
+                content : [],
+                message: "No content found",
+            })
+            return
+        }
+
+        res.status(200).json({
+            content : find_content,
+            message : "Content found"
+        })
+
+    }catch(error){
+        res.status(500).json({
+            message : "Error in fetching content of the user"
+        })
+    }
+})
+
+
 
 export default UserRoutes;

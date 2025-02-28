@@ -12,7 +12,7 @@ app.use("/user" , UserRoutes);
 
 async function main() {
     try {
-        const mongourl:string = process.env.MONGO_URL as string
+        const mongourl = process.env.MONGO_URL as string
         await mongoose.connect(mongourl)
         app.listen(3000 , () => {
             console.log("Server running at port 3000");

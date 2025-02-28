@@ -7,16 +7,11 @@ const user = new Schema({
     password: { type: String, required: true },
 });
 
-enum contenttype {
-    image = "image",
-    audio = "audio",
-    text = "text",
-    video = "video",
-}
 
 const content = new Schema({
     title: {type : String},
-    contentType: { type: String , enum : Object.values(contenttype) },
+    content: { type: String },
+    contentType : {enum : ['image' , 'audio' , 'video' , 'text' , 'link']},
     tags : {type : ObjectId , ref:"Tag"},
     userId : {type : ObjectId , ref:"User"}
 });
@@ -27,7 +22,7 @@ const tag = new Schema({
 })
 
 
-const link = new Schema({
+const sharing_link = new Schema({
     hash : String,
     userId : {type : ObjectId , ref:'User'}
 })
@@ -35,6 +30,6 @@ const link = new Schema({
 const UserModel = mongoose.model("User" , user)
 const ContentModel = mongoose.model("Content" , content)
 const TagModel = mongoose.model("Tag" , tag)
-const LinkModel = mongoose.model("Link" , link)
+const LinkModel = mongoose.model("Link" , sharing_link)
 
 export {UserModel , ContentModel , TagModel , LinkModel}
