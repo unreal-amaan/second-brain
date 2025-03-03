@@ -11,14 +11,13 @@ const user = new Schema({
 const content = new Schema({
     title: {type : String},
     content: { type: String },
-    contentType : {enum : ['image' , 'audio' , 'video' , 'text' , 'link']},
-    tags : {type : ObjectId , ref:"Tag"},
-    userId : {type : ObjectId , ref:"User"}
+    tags : [{type : ObjectId , ref:"Tag"}],
+    userId : {type : ObjectId , ref:"User" , required : true}
 });
 
 
 const tag = new Schema({
-    title:String
+    title:{type : String , unique : true}
 })
 
 

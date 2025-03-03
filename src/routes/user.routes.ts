@@ -4,9 +4,9 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import validator from "validator";
-import { UserModel , ContentModel , TagModel , LinkModel } from "../schema/schema";
+import { UserModel, ContentModel, TagModel, LinkModel } from "../schema/schema";
 import userauth from "../middlewares/user.auth";
-
+import mongoose from "mongoose"
 
 const UserRoutes = express.Router();
 dotenv.config();
@@ -16,7 +16,6 @@ interface user_credentials {
     username: string;
     password: string;
 }
-
 
 UserRoutes.post(
     "/signup",
@@ -75,7 +74,6 @@ UserRoutes.post(
 UserRoutes.post(
     "/signin",
     async (req: Request, res: Response): Promise<void> => {
-
         const UserCredentials: user_credentials = req.body;
 
         const user = await UserModel.findOne({
@@ -87,7 +85,7 @@ UserRoutes.post(
             });
             return;
         }
-        console.log(user)
+        console.log(user);
         const valid_password = await bcrypt.compare(
             UserCredentials.password,
             user.password
@@ -114,38 +112,63 @@ UserRoutes.post(
     }
 );
 
-UserRoutes.use(userauth)
+UserRoutes.use(userauth);
 
-interface CustomRequest extends Request{
-    userId?: string
+interface CustomRequest extends Request {
+    userId?: string;
 }
 
-UserRoutes.get("/my-content" , async (req:CustomRequest , res:Response) => {
-    const userId = req.userId
+UserRoutes.get("/my-content", async (req: CustomRequest, res: Response) => {
+    const userId = req.userId;
     try {
         const find_content = await ContentModel.find({
-            userId: userId
-        })
-        if(find_content.length == 0) {
-            res.status(404).json({
-                content : [],
-                message: "No content found",
-            })
-            return
-        }
+            userId: userId,
+        });
 
         res.status(200).json({
-            content : find_content,
-            message : "Content found"
-        })
-
-    }catch(error){
+            content: find_content,
+            message: "Content found",
+        });
+    } catch (error) {
         res.status(500).json({
-            message : "Error in fetching content of the user"
-        })
+            message: "Error in fetching content of the user",
+        });
     }
-})
+});
 
+UserRoutes.post("/add-content", async (req: CustomRequest, res: Response) => {
+    const userId = req.userId;
+    const { title, content, tags } = req.body;
 
+    try {
+        const tagIds = await Promise.all(
+            tags.map(async (tag: string) => {
+                const existingTag = await TagModel.findOneAndUpdate(
+                    { title: tag },
+                    { title: tag },
+                    { upsert: true, new: true, setDefaultsOnInsert: true }
+                );
+
+                return new mongoose.Types.ObjectId(existingTag._id);
+            })
+        );
+
+        const newContent = await ContentModel.create({
+            title,
+            content,
+            tags: tagIds,
+            userId,
+        });
+        console.log(newContent);
+        res.status(200).json({
+            message: "New content added successfully",
+        });
+    } catch (error) {
+        console.log(error);
+        res.status(400).json({
+            message: "Error in adding new content",
+        });
+    }
+});
 
 export default UserRoutes;
